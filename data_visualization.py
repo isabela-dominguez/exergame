@@ -2,7 +2,7 @@ from config import *
 
 
 # import data from CSV
-df = pd.read_csv('data/ziads_data/Jumping.csv', engine="python",index_col=False, sep=";", header= 1, encoding='utf-8' )
+df = pd.read_csv('data/ziads_data/Walking.csv', engine="python",index_col=False, sep=";", header= 1, encoding='utf-8' )
 
 print(df.size)
 print(df.dtypes)
@@ -124,4 +124,26 @@ ax2.legend()
 ax3.plot(freq,abs(fft_z),c='g',label='z noise')
 ax3.legend()
 ax3.set_xlabel('Freqeuncy (Hz)')
+plt.show()
+
+
+
+#high pass filter to remove noise from the data 
+
+# Attenuate noise in X,Y below 10Hz by 10 dB
+# Attenuate noise <10Hz and >5Hz in Z axis by 10 dB
+atten_x_fft = np.where(freq < 10,fft_x * 0.1, fft_x) 
+atten_y_fft = np.where(freq < 10,fft_y * 0.1, fft_y) 
+atten_z_fft = np.where((freq > 5) & (freq < 10),fft_z * 0.1, fft_z) 
+# Compute inverse of discrete Fourier Transform 
+df['x_ifft'] = np.fft.irfft(atten_x_fft,n=df.shape[0])
+df['y_ifft'] = np.fft.irfft(atten_y_fft,n=df.shape[0])
+df['z_ifft'] = np.fft.irfft(atten_z_fft,n=df.shape[0])
+# Plot new acceleration signals
+cols_raw = ['EARTH LINEAR ACCELERATION X','EARTH LINEAR ACCELERATION Y','EARTH LINEAR ACCELERATION Z']
+cols_new = ['x_ifft','y_ifft','z_ifft']
+rawplot = df.plot(y=cols_raw,subplots=True, sharex=True, layout=(1,3),
+style='k',title=cols_raw,alpha=0.5)
+df.plot(y=cols_new,subplots=True,layout=(1,3),ax=rawplot,
+sharex=True,style='g')
 plt.show()
